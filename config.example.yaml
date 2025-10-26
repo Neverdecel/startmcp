@@ -1,0 +1,40 @@
+# Example configuration for startmcp
+# Copy this file to config.yaml and customize for your needs
+
+# List of enabled provider-mcps
+enabled_providers:
+  - atlassian
+  - github
+  # - gitlab
+  # - postgres
+  # - firecrawl
+  # - context7
+
+# Provider-specific settings (optional)
+atlassian:
+  default_project: "PROJ"
+  endpoint: "https://mcp.atlassian.com/v1/sse"
+
+github:
+  default_org: "mycompany"
+  default_repo: "myrepo"
+
+postgres:
+  database: "production"
+  max_connections: 5
+
+firecrawl:
+  max_pages: 10
+  timeout: 30
+
+context7:
+  cache_ttl: 3600
+
+# Global settings
+logging:
+  level: "INFO"
+  format: "json"
+
+timeouts:
+  connection: 30
+  request: 60
