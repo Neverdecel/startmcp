@@ -1,198 +1,257 @@
 # startmcp
 
-> A flexible MCP (Model Context Protocol) client framework for connecting AI tools to your data and systems.
+> Unified MCP gateway server that aggregates multiple backend providers into a single connection point for AI assistants.
 
 [![MCP Protocol](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 🎯 What is startmcp?
 
-**startmcp** is a reusable framework that lets you quickly integrate AI assistants (Claude, Codex, etc.) with various backends (Atlassian, GitHub, databases, web services) through the [Model Context Protocol](https://modelcontextprotocol.io).
+**startmcp** is an MCP gateway server that connects AI assistants (like Claude) to multiple data sources through a single, unified interface.
 
-Think of it as a **universal adapter** for connecting AI tools to your data sources - just enable the providers you need through an interactive wizard.
+### The Problem
+AI assistants need to connect to multiple MCP servers (Atlassian, GitHub, databases, etc.), requiring separate configurations for each provider.
 
-### Key Features
+### The Solution
+**startmcp** acts as a gateway that aggregates all your providers into one MCP server:
 
-- 🔌 **MCP Protocol Compliant** - Follows official specification
-- 🧙 **Interactive Setup Wizard** - Beautiful CLI experience
-- 🔐 **OAuth 2.1 Support** - Browser-based authentication with SSE
-- 🏗️ **Modular Architecture** - Enable only what you need
-- 📦 **Provider Categories** - Organized by purpose (Enterprise, Dev Tools, Data, Cloud, Web)
-- 🚀 **Multi-Transport** - SSE and stdio support
+```
+Before (Multiple Connections):          After (Single Gateway):
+┌─────────────┐                         ┌─────────────┐
+│ AI Assistant│                         │ AI Assistant│
+└──────┬──────┘                         └──────┬──────┘
+       │                                       │
+   ┌───┴───┬───────┬───────┐                 │
+   │       │       │       │                  │
+┌──▼─┐  ┌─▼──┐  ┌─▼──┐  ┌─▼──┐         ┌───▼────────┐
+│Atl.│  │GH  │  │ DB │  │ etc│         │  startmcp  │
+│MCP │  │MCP │  │MCP │  │MCP │         │   Gateway  │
+└────┘  └────┘  └────┘  └────┘         └────┬───────┘
+                                             │
+                                   ┌─────────┼────────┬─────┐
+                                   │         │        │     │
+                                ┌──▼─┐   ┌──▼──┐  ┌──▼─┐ ┌─▼──┐
+                                │Atl.│   │ GH  │  │ DB │ │etc │
+                                │MCP │   │ MCP │  │MCP │ │MCP │
+                                └────┘   └─────┘  └────┘ └────┘
+```
+
+## ✨ Key Features
+
+- **🎯 Single MCP Server** - One connection for all your providers
+- **🔀 Smart Routing** - Tools route to the correct backend automatically
+- **🏷️ Hybrid Namespacing** - Natural names when unique, prefixed only on conflicts
+- **🔐 OAuth 2.1 Support** - Browser-based authentication
+- **🧙 Interactive Wizard** - Beautiful CLI setup experience
+- **📦 Plugin Architecture** - Easy to add custom providers
+- **⚡ Near-Native Performance** - Minimal routing overhead (~5ms)
 
 ## 🚀 Quick Start
 
 ### Installation
 
 ```bash
+# Clone the repository
 git clone https://github.com/yourusername/startmcp.git
 cd startmcp
+
+# Install with pip
 pip install -e .
+
+# Verify installation
+mcp --help
 ```
 
-### Initialize with Interactive Wizard
+### Setup
+
+Run the interactive wizard:
 
 ```bash
 mcp init
 ```
 
-The wizard will guide you through:
-1. Selecting provider-mcps from categorized lists
-2. Configuring OAuth flows (browser-based for services like Atlassian)
-3. Setting up API keys and credentials
-4. Saving configuration to `config.yaml`
+The wizard will:
+1. Show available providers by category
+2. Guide you through authentication (browser opens for OAuth)
+3. Verify the connection works
+4. Save configuration to `config.yaml`
 
-### Query Your Data
-
-```bash
-# Query across all enabled providers
-mcp query "show my open Jira tickets"
-
-# List enabled providers
-mcp providers list --enabled
-
-# Validate configuration
-mcp validate
-```
-
-## 📦 Available Provider-MCPs
-
-### 🏢 Enterprise & Collaboration
-- **Atlassian** - Jira, Confluence, Compass (SSE + OAuth)
-- **GitHub** - Repositories, issues, pull requests
-- **GitLab** - Projects, merge requests
-- **Slack** - Channels, messages
-
-### 🛠️ Development Tools
-- **Claude Code** - AI coding assistant
-- **Cursor** - Code editor integration
-- **Codex** - OpenAI code model
-
-### 💾 Data Sources
-- **PostgreSQL** - Database queries
-- **MongoDB** - Document database
-- **Elasticsearch** - Search and analytics
-
-### ☁️ Cloud Platforms
-- **AWS** - EC2, S3, Lambda resources
-- **Azure** - Resource management
-- **GCP** - Google Cloud services
-
-### 🌐 Web Services
-- **FireCrawl** - Web scraping
-- **Serper** - Search API
-
-## 📁 Project Structure
-
-```
-startmcp/
-├── mcp/                     # Core framework
-│   ├── client.py           # MCP client implementation
-│   ├── provider.py         # Provider base class
-│   ├── cli/                # CLI and wizard
-│   └── transport/          # SSE and stdio transports
-├── provider-mcps/          # Available providers
-│   ├── enterprise/         # Atlassian, GitHub, etc.
-│   ├── dev_tools/          # AI coding tools
-│   ├── data/               # Databases
-│   ├── cloud/              # Cloud platforms
-│   └── web/                # Web services
-├── config.yaml             # Your configuration
-└── .env                    # Credentials (gitignored)
-```
-
-## 🔧 Configuration
-
-### config.yaml
-
-```yaml
-enabled_providers:
-  - atlassian
-  - github
-  - firecrawl
-
-atlassian:
-  default_project: "PROJ"
-
-github:
-  default_org: "mycompany"
-```
-
-### .env
+### Start the Gateway
 
 ```bash
-GITHUB_TOKEN=ghp_xxxxx
-FIRECRAWL_API_KEY=xxxxx
-# Atlassian uses OAuth (no manual token needed)
+mcp serve --stdio
 ```
+
+The gateway will:
+- Load your `config.yaml`
+- Connect to all enabled providers
+- Aggregate tools from each provider
+- Start the stdio MCP server
+- Listen for requests from your AI assistant
+
+### Connect Your AI Assistant
+
+**For Claude Desktop**, add to `~/.config/claude/config.json`:
+
+```json
+{
+  "mcpServers": {
+    "startmcp": {
+      "command": "mcp",
+      "args": ["serve", "--stdio"]
+    }
+  }
+}
+```
+
+Restart Claude Desktop, and you'll have access to all your providers' tools!
+
+## 🏗️ Architecture
+
+startmcp implements a **gateway pattern** for MCP:
+
+1. **Tool Aggregation** - Collects tools from all providers
+2. **Conflict Detection** - Identifies tool name collisions
+3. **Hybrid Namespacing** - Keeps natural names when possible:
+   - `search_issues` → Routes to Atlassian (unique name)
+   - `create_pr` → Routes to GitHub (unique name)
+   - `atlassian:list_projects` → Explicit routing (conflict with GitHub)
+   - `github:list_projects` → Explicit routing (conflict with Atlassian)
+4. **Smart Routing** - Directs each tool call to the correct provider
+5. **Helpful Errors** - Suggests correct tool names on ambiguity
+
+See [Architecture Overview](docs/architecture/overview.md) for details.
+
+## 📦 Available Providers
+
+### 🏢 Enterprise
+- **Atlassian Suite** - Jira, Confluence, Compass (OAuth via mcp-remote)
+
+### 🚧 Coming Soon
+- GitHub - Repositories, issues, PRs
+- GitLab - Projects, merge requests
+- PostgreSQL - Database queries
+- MongoDB - Document operations
+- And more...
 
 ## 🛠️ CLI Commands
 
 ```bash
-# Initial setup wizard
+# Interactive setup wizard
 mcp init
 
 # List all available providers
 mcp providers list
 
-# List enabled providers only
+# List only enabled providers
 mcp providers list --enabled
 
-# Enable a provider (runs wizard for that provider)
-mcp providers enable github
+# Start the gateway server
+mcp serve --stdio
 
-# Disable a provider
-mcp providers disable github
-
-# Validate configuration and test connections
-mcp validate
-
-# Query across enabled providers
-mcp query "your query here"
-
-# Reconfigure (re-run wizard)
+# Reconfigure setup
 mcp init --reconfigure
 ```
 
-## 🔌 Creating Custom Providers
+## 📁 Project Structure
 
-See [docs/PROVIDER_GUIDE.md](docs/PROVIDER_GUIDE.md) for detailed instructions.
+```
+startmcp/
+├── mcp/                        # Core framework
+│   ├── protocol.py            # MCP protocol models
+│   ├── client.py              # MCP client
+│   ├── provider.py            # Provider base class
+│   ├── transport/             # SSE and stdio transports
+│   ├── server/                # MCP server implementation
+│   ├── gateway.py             # Gateway orchestrator
+│   ├── aggregator.py          # Tool aggregation
+│   ├── router.py              # Tool/resource routing
+│   ├── conflict_resolver.py   # Conflict detection
+│   ├── registry.py            # Provider discovery
+│   └── cli/                   # CLI and wizard
+├── provider_mcps/             # Provider implementations
+│   ├── enterprise/            # Atlassian, etc.
+│   ├── dev_tools/             # GitHub, GitLab, etc.
+│   ├── data/                  # Databases
+│   ├── cloud/                 # AWS, GCP, Azure
+│   └── web/                   # Web services
+├── tests/                     # Unit and integration tests
+├── docs/                      # Documentation
+└── config.yaml               # Your configuration
+```
 
-Quick example:
+## 🔧 Configuration
+
+After running `mcp init`, your `config.yaml` will look like:
+
+```yaml
+enabled_providers:
+  - atlassian
+
+logging:
+  level: INFO
+  format: json
+
+timeouts:
+  connection: 30
+  request: 60
+```
+
+Provider-specific settings can be added:
+
+```yaml
+atlassian:
+  default_project: "PROJ"
+  cloud_id: "your-cloud-id"
+```
+
+## 🧑‍💻 Creating Custom Providers
+
+Create a new provider by extending `MCPProvider`:
 
 ```python
-# provider-mcps/custom/my_provider.py
+# provider_mcps/custom/my_provider/provider.py
 from mcp.provider import MCPProvider
-from pydantic import BaseModel
-
-class MyProviderConfig(BaseModel):
-    api_key: str
+from mcp.categories import ProviderCategory
 
 class MyProvider(MCPProvider):
     name = "my_provider"
-    category = "custom"
     display_name = "My Custom Provider"
-    transport_type = "sse"
+    category = ProviderCategory.CUSTOM
+    transport_type = "sse"  # or "stdio"
 
-    async def connect(self):
-        # Your connection logic
-        pass
-
-    async def list_resources(self):
-        # Return available resources
+    async def create_transport(self):
+        # Return configured transport
         pass
 ```
 
-## 🤝 Contributing
-
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [Creating Providers Guide](docs/guides/creating-providers.md) for details.
 
 ## 📚 Documentation
 
-- [Project Architecture](docs/project.md)
-- [Problem Statement](problem-statement.md)
-- [Provider Development Guide](docs/PROVIDER_GUIDE.md)
-- [MCP Compliance](docs/MCP_COMPLIANCE.md)
+- **Getting Started**
+  - [Quick Start](docs/getting-started/quickstart.md)
+  - [Installation Guide](docs/getting-started/installation.md)
+- **Architecture**
+  - [Overview](docs/architecture/overview.md)
+  - [Gateway Design](docs/architecture/gateway.md)
+  - [Tool Routing](docs/architecture/routing.md)
+- **Guides**
+  - [Creating Providers](docs/guides/creating-providers.md)
+- **Reference**
+  - [CLI Commands](docs/reference/cli.md)
+- **Project Background**
+  - [Problem Statement](problem-statement.md)
+  - [Original Design](docs/project.md)
+
+## 🤝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## 📝 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 
 ## 📄 License
 
@@ -200,8 +259,9 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 🙏 Acknowledgments
 
-- Built on the [Model Context Protocol](https://modelcontextprotocol.io) standard
-- Inspired by the need for flexible AI-to-data integration
+- Built on the [Model Context Protocol](https://modelcontextprotocol.io) specification
+- Atlassian provider uses [mcp-remote](https://www.npmjs.com/package/mcp-remote)
+- Inspired by the need for unified AI-to-data integration
 
 ---
 
