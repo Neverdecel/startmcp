@@ -1,0 +1,1 @@
+"""Atlassian provider for MCP."""
